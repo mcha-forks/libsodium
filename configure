@@ -7966,54 +7966,6 @@ else $as_nop
 fi
 
 
-case $host_os in #(
-  cygwin*|mingw*|msys|pw32*|cegcc*|eabi*) :
-      ;; #(
-  *) :
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fPIC" >&5
-printf %s "checking whether C compiler accepts -fPIC... " >&6; }
-if test ${ax_cv_check_cflags___fPIC+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-
-  ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -fPIC"
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <time.h>
-int
-main (void)
-{
-time_t x; int fodder = 0; if (fodder > -1000 && time(&x)) return (int) x
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ax_cv_check_cflags___fPIC=yes
-else $as_nop
-  ax_cv_check_cflags___fPIC=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-  CFLAGS=$ax_check_save_flags
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___fPIC" >&5
-printf "%s\n" "$ax_cv_check_cflags___fPIC" >&6; }
-if test "x$ax_cv_check_cflags___fPIC" = xyes
-then :
-  CFLAGS="$CFLAGS -fPIC"
-else $as_nop
-  :
-fi
-
- ;;
-esac
-
 if test "$enable_pie" != "no"
 then :
 
