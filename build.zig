@@ -16,13 +16,15 @@ pub fn build(b: *std.build.Builder) !void {
     const enable_benchmarks = b.option(bool, "enable_benchmarks", "Whether tests should be benchmarks.") orelse false;
     const benchmarks_iterations = b.option(u32, "iterations", "Number of iterations for benchmarks.") orelse 200;
 
+    const shared = b.addSharedLibrary(
+        if (target.isWindows()) "sodium_shared" else "sodium",
+        null,
+        .unversioned,
+    );
     const static = b.addStaticLibrary("sodium", null);
-    const shared = b.addSharedLibrary("sodium", null, .unversioned);
-    static.strip = true;
-    shared.strip = true;
 
-    const libs_ = [_]*LibExeObjStep{ static, shared };
-    const libs = if (target.getOsTag() == .wasi) libs_[0..1] else libs_[0..];
+    const libs_ = [_]*LibExeObjStep{ shared, static };
+    const libs = if (target.getOsTag() == .wasi) libs_[1..] else libs_[0..];
 
     const prebuilt_version_file_path = "builds/msvc/version.h";
     const version_file_path = "include/sodium/version.h";
@@ -66,6 +68,7 @@ pub fn build(b: *std.build.Builder) !void {
 
                 lib.defineCMacro("HAVE_CATCHABLE_ABRT", "1");
                 lib.defineCMacro("HAVE_CATCHABLE_SEGV", "1");
+                lib.defineCMacro("HAVE_CLOCK_GETTIME", "1");
                 lib.defineCMacro("HAVE_GETPID", "1");
                 lib.defineCMacro("HAVE_INLINE_ASM", "1");
                 lib.defineCMacro("HAVE_MADVISE", "1");
@@ -87,6 +90,9 @@ pub fn build(b: *std.build.Builder) !void {
             .windows => {
                 lib.defineCMacro("HAVE_RAISE", "1");
                 lib.defineCMacro("HAVE_SYS_PARAM_H", "1");
+                if (lib == static) {
+                    lib.defineCMacro("SODIUM_STATIC", "1");
+                }
             },
             .macos => {
                 lib.defineCMacro("ASM_HIDE_SYMBOL", ".private_extern");
@@ -96,6 +102,7 @@ pub fn build(b: *std.build.Builder) !void {
                 lib.defineCMacro("HAVE_ARC4RANDOM_BUF", "1");
                 lib.defineCMacro("HAVE_CATCHABLE_ABRT", "1");
                 lib.defineCMacro("HAVE_CATCHABLE_SEGV", "1");
+                lib.defineCMacro("HAVE_CLOCK_GETTIME", "1");
                 lib.defineCMacro("HAVE_GETENTROPY", "1");
                 lib.defineCMacro("HAVE_GETPID", "1");
                 lib.defineCMacro("HAVE_MADVISE", "1");
@@ -117,6 +124,7 @@ pub fn build(b: *std.build.Builder) !void {
             .wasi => {
                 lib.defineCMacro("HAVE_ARC4RANDOM", "1");
                 lib.defineCMacro("HAVE_ARC4RANDOM_BUF", "1");
+                lib.defineCMacro("HAVE_CLOCK_GETTIME", "1");
                 lib.defineCMacro("HAVE_GETENTROPY", "1");
                 lib.defineCMacro("HAVE_NANOSLEEP", "1");
                 lib.defineCMacro("HAVE_POSIX_MEMALIGN", "1");
@@ -218,7 +226,6 @@ pub fn build(b: *std.build.Builder) !void {
         exe.addIncludePath("test/quirks");
         const full_path = try fmt.allocPrint(allocator, "{s}/{s}", .{ test_path, entry.path });
         exe.addCSourceFiles(&.{full_path}, &.{});
-        exe.strip = true;
 
         if (enable_benchmarks) {
             exe.defineCMacro("BENCHMARKS", "1");
